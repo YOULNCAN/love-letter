@@ -60,7 +60,26 @@ function openLetter() {
   $('envelope').classList.add('opening');
   $('envelope').disabled = true;
   $('open-letter').disabled = true;
-  window.setTimeout(() => showStage('envelope-stage', 'letter-stage', 'letter-title'), reducedMotion.matches ? 0 : 800);
+  $('open-letter').textContent = '正在展开…';
+  if (reducedMotion.matches) {
+    showStage('envelope-stage', 'letter-stage', 'letter-title');
+    return;
+  }
+  const paper = $('envelope').querySelector('.envelope-letter');
+  let finished = false;
+  function finishOpening() {
+    if (finished) return;
+    finished = true;
+    window.clearTimeout(fallback);
+    paper.removeEventListener('animationend', onPaperOpened);
+    showStage('envelope-stage', 'letter-stage', 'letter-title');
+  }
+  function onPaperOpened(event) {
+    if (event.animationName === 'letter-rise') finishOpening();
+  }
+  paper.addEventListener('animationend', onPaperOpened);
+  // Fallback also covers motion preferences changing during the animation.
+  const fallback = window.setTimeout(finishOpening, 1800);
 }
 $('envelope').addEventListener('click', openLetter);
 $('open-letter').addEventListener('click', openLetter);

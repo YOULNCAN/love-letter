@@ -3,4 +3,20 @@
 @media(max-width:420px){.masthead{padding:20px 24px}main{padding:12px 20px 30px}.entry{padding-top:22px}.intro{margin-bottom:28px}.envelope{margin-top:48px}.paper{padding:24px 22px}.choices{gap:10px}.choices button{padding-inline:10px}.recipient{font-size:15px}.paper p{font-size:16px}}
 .music-toggle{margin-left:auto;flex-shrink:0;border:1px solid var(--line);background:#fffcf780;color:var(--rose);border-radius:24px;padding:10px 12px;min-height:44px;font-size:12px;letter-spacing:0}.music-toggle:hover{background:#f1e2dc}.music-toggle>span:first-child{font-size:18px}.masthead{flex-wrap:wrap;row-gap:12px}
 @media(max-width:360px){.masthead{padding-inline:20px;gap:7px;letter-spacing:.08em}.music-toggle{padding-inline:9px}}
+/* Open the flap before lifting the letter; keep each layer in front until it clears. */
+.envelope{perspective:1000px;overflow:visible;margin-top:110px}
+.envelope-letter{z-index:1;border:1px solid #e6d8d0;border-radius:3px;box-shadow:0 2px 8px #7149360d;transition:none}
+.envelope-flap{height:57%;clip-path:polygon(0 0,100% 0,50% 100%);transition:none;backface-visibility:visible}
+.envelope.opening{translate:0 0;cursor:default}
+.opening .seal{opacity:0;transform:scale(.8);transition:opacity .18s,transform .18s}
+.opening .envelope-flap{animation:flap-open .55s .15s ease-in-out both;transform:none;z-index:3}
+.opening .envelope-letter{animation:letter-rise .65s .65s cubic-bezier(.22,.61,.36,1) both;transform:none}
+.opening .recipient{opacity:0;transition:opacity .3s .65s}
+.envelope-stage:has(.opening)>h1{opacity:0;transition:opacity .25s .65s}
+.envelope-stage>.primary:disabled{cursor:wait;background:#b67a87;border-color:#b67a87}
+.letter-stage:not([hidden]){animation:letter-arrive .45s ease-out both}
+@keyframes flap-open{0%{transform:rotateX(0);z-index:3}49%{z-index:3}50%,100%{z-index:0}100%{transform:rotateX(180deg)}}
+@keyframes letter-rise{0%{transform:translateY(0);opacity:1}75%{opacity:1}100%{transform:translateY(-85%);opacity:0}}
+@keyframes letter-arrive{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:420px){.envelope{margin-top:95px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
