@@ -74,14 +74,26 @@ function openLetter() {
     finished = true;
     window.clearTimeout(fallback);
     paper.removeEventListener('animationend', onPaperOpened);
-    if (!reducedMotion.matches) {
-      const exit = $('envelope-stage').animate(
-        [{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(12px)' }],
-        { duration: 220, easing: 'ease-in', fill: 'forwards' }
-      );
-      await exit.finished.catch(() => {});
+    let exit;
+    let exitTimeout;
+    try {
+      if (!reducedMotion.matches && typeof $('envelope-stage').animate === 'function') {
+        exit = $('envelope-stage').animate(
+          [{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(12px)' }],
+          { duration: 220, easing: 'ease-in', fill: 'forwards' }
+        );
+        await Promise.race([
+          exit.finished,
+          new Promise(resolve => { exitTimeout = window.setTimeout(resolve, 450); })
+        ]);
+      }
+    } catch {
+      // A decorative animation must never prevent reading the letter.
+    } finally {
+      window.clearTimeout(exitTimeout);
+      showStage('envelope-stage', 'letter-stage', 'letter-title');
+      exit?.cancel();
     }
-    showStage('envelope-stage', 'letter-stage', 'letter-title');
   }
   function onPaperOpened(event) {
     if (event.animationName === 'letter-rise') finishOpening();
@@ -119,13 +131,19 @@ let audioContext;
 let musicTimer;
 let musicPlaying = false;
 let musicBusy = false;
+let musicDesired = false;
+const activeOscillators = new Set();
 let autoMusicAttempted = false;
 let noteIndex = 0;
 let nextNoteTime = 0;
 const musicNotes = [60,64,67,72,71,67,64,67,57,60,64,69,67,64,60,64,53,57,60,65,64,60,57,60,55,59,62,67,69,67,62,59];
 
 function scheduleMusic() {
-  while (nextNoteTime < audioContext.currentTime + 0.2) {
+  if (audioContext.state !== 'running') return;
+  const now = audioContext.currentTime;
+  // Skip expired notes instead of recreating a backlog after a background pause.
+  if (nextNoteTime < now) nextNoteTime = now + 0.05;
+  for (let scheduled = 0; scheduled < 2 && nextNoteTime < now + 0.2; scheduled += 1) {
     const frequency = 440 * 2 ** ((musicNotes[noteIndex % musicNotes.length] - 69) / 12);
     const voice = audioContext.createGain();
     voice.gain.setValueAtTime(0, nextNoteTime);
@@ -134,6 +152,7 @@ function scheduleMusic() {
     voice.connect(audioContext.destination);
     [1, 2, 3].forEach((harmonic, index) => {
       const oscillator = audioContext.createOscillator();
+      activeOscillators.add(oscillator);
       const tone = audioContext.createGain();
       oscillator.type = 'sine';
       oscillator.frequency.value = frequency * harmonic;
@@ -142,11 +161,39 @@ function scheduleMusic() {
       tone.connect(voice);
       oscillator.start(nextNoteTime);
       oscillator.stop(nextNoteTime + 2.5);
-      oscillator.onended = () => { oscillator.disconnect(); tone.disconnect(); if (index === 2) voice.disconnect(); };
+      oscillator.onended = () => { activeOscillators.delete(oscillator); oscillator.disconnect(); tone.disconnect(); if (index === 2) voice.disconnect(); };
     });
     noteIndex += 1;
     nextNoteTime += 0.55;
   }
+}
+
+function stopMusicScheduler() {
+  window.clearInterval(musicTimer);
+  musicTimer = undefined;
+  for (const oscillator of activeOscillators) {
+    try { oscillator.stop(); } catch { /* Already stopped. */ }
+    oscillator.disconnect();
+  }
+  activeOscillators.clear();
+}
+
+function failMusic() {
+  stopMusicScheduler();
+  musicPlaying = false;
+  musicDesired = false;
+  const failedContext = audioContext;
+  audioContext = undefined;
+  if (failedContext) {
+    failedContext.onstatechange = null;
+    failedContext.close().catch(() => {});
+  }
+  updateMusicButton();
+  $('music-label').textContent = '点击重试';
+}
+
+function tickMusic() {
+  try { scheduleMusic(); } catch { failMusic(); }
 }
 
 function updateMusicButton() {
@@ -156,29 +203,43 @@ function updateMusicButton() {
 }
 
 async function setMusic(playing) {
+  musicDesired = playing;
   if (musicBusy) return;
   musicBusy = true;
   try {
-    if (playing) {
-      const AudioEngine = window.AudioContext || window.webkitAudioContext;
-      if (!AudioEngine) throw new Error('Audio unsupported');
-      audioContext ||= new AudioEngine();
-      await audioContext.resume();
-      if (audioContext.state !== 'running') throw new Error('Audio blocked');
-      musicPlaying = true;
-      nextNoteTime = audioContext.currentTime + 0.05;
-      scheduleMusic();
-      musicTimer = window.setInterval(scheduleMusic, 100);
-    } else {
-      window.clearInterval(musicTimer);
-      await audioContext.suspend();
-      musicPlaying = false;
+    while (true) {
+      const requested = musicDesired;
+      stopMusicScheduler();
+      if (requested) {
+        const AudioEngine = window.AudioContext || window.webkitAudioContext;
+        if (!AudioEngine) throw new Error('Audio unsupported');
+        if (!audioContext) {
+          audioContext = new AudioEngine();
+          audioContext.onstatechange = () => {
+            musicPlaying = musicDesired && audioContext.state === 'running';
+            if (!musicBusy && !musicPlaying) {
+              musicDesired = false;
+              stopMusicScheduler();
+            }
+            updateMusicButton();
+          };
+        }
+        await audioContext.resume();
+        if (requested !== musicDesired) continue;
+        if (audioContext.state !== 'running') throw new Error('Audio blocked');
+        musicPlaying = true;
+        nextNoteTime = audioContext.currentTime + 0.05;
+        scheduleMusic();
+        musicTimer = window.setInterval(tickMusic, 100);
+      } else {
+        if (audioContext) await audioContext.suspend();
+        musicPlaying = false;
+      }
+      if (requested === musicDesired) break;
     }
     updateMusicButton();
   } catch {
-    musicPlaying = false;
-    updateMusicButton();
-    $('music-label').textContent = '点击重试';
+    failMusic();
   } finally {
     musicBusy = false;
   }
@@ -186,7 +247,7 @@ async function setMusic(playing) {
 
 $('music-toggle').addEventListener('click', () => {
   autoMusicAttempted = true;
-  setMusic(!musicPlaying);
+  setMusic(!musicDesired);
 });
 function startMusicOnInteraction(event) {
   if (autoMusicAttempted || event.target.closest('#music-toggle')) return;
