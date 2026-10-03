@@ -45,6 +45,7 @@ $('name-form').addEventListener('submit', (event) => {
   }
   $('recipient-name').textContent = name;
   $('letter-name').textContent = name;
+  $('preview-name').textContent = `${name}：`;
   $('letter-body').replaceChildren(...COPY.letter.map((text) => {
     const paragraph = document.createElement('p');
     paragraph.textContent = text;
@@ -57,6 +58,7 @@ $('name-form').addEventListener('submit', (event) => {
 function openLetter() {
   if (opening) return;
   opening = true;
+  $('envelope-stage').classList.add('is-opening');
   $('envelope').classList.add('opening');
   $('envelope').disabled = true;
   $('open-letter').disabled = true;
@@ -67,11 +69,18 @@ function openLetter() {
   }
   const paper = $('envelope').querySelector('.envelope-letter');
   let finished = false;
-  function finishOpening() {
+  async function finishOpening() {
     if (finished) return;
     finished = true;
     window.clearTimeout(fallback);
     paper.removeEventListener('animationend', onPaperOpened);
+    if (!reducedMotion.matches) {
+      const exit = $('envelope-stage').animate(
+        [{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(12px)' }],
+        { duration: 220, easing: 'ease-in', fill: 'forwards' }
+      );
+      await exit.finished.catch(() => {});
+    }
     showStage('envelope-stage', 'letter-stage', 'letter-title');
   }
   function onPaperOpened(event) {

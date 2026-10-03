@@ -3,20 +3,28 @@
 @media(max-width:420px){.masthead{padding:20px 24px}main{padding:12px 20px 30px}.entry{padding-top:22px}.intro{margin-bottom:28px}.envelope{margin-top:48px}.paper{padding:24px 22px}.choices{gap:10px}.choices button{padding-inline:10px}.recipient{font-size:15px}.paper p{font-size:16px}}
 .music-toggle{margin-left:auto;flex-shrink:0;border:1px solid var(--line);background:#fffcf780;color:var(--rose);border-radius:24px;padding:10px 12px;min-height:44px;font-size:12px;letter-spacing:0}.music-toggle:hover{background:#f1e2dc}.music-toggle>span:first-child{font-size:18px}.masthead{flex-wrap:wrap;row-gap:12px}
 @media(max-width:360px){.masthead{padding-inline:20px;gap:7px;letter-spacing:.08em}.music-toggle{padding-inline:9px}}
-/* Open the flap before lifting the letter; keep each layer in front until it clears. */
-.envelope{perspective:1000px;overflow:visible;margin-top:110px}
-.envelope-letter{z-index:1;border:1px solid #e6d8d0;border-radius:3px;box-shadow:0 2px 8px #7149360d;transition:none}
-.envelope-flap{height:57%;clip-path:polygon(0 0,100% 0,50% 100%);transition:none;backface-visibility:visible}
+/* The letter stays visible after it clears the pocket, before the reading view fades in. */
+.envelope-stage{padding-top:10px}
+.stage h1[tabindex="-1"]:focus{outline:none}
+.envelope{perspective:1000px;overflow:visible;animation:none;margin:155px auto 32px;background:linear-gradient(145deg,#e8c5b5,#e1b7a6);border:1px solid #d5ad9c;box-shadow:0 22px 36px -16px #7d51434a,0 4px 10px #7d514312}
+.envelope-letter{inset:6% 7% 5%;z-index:1;border:1px solid #e6d8d0;border-radius:3px;box-shadow:0 3px 12px #71493614;transition:none;display:flex;flex-direction:column;gap:14px;text-align:left;padding:16px 20px;overflow:hidden}
+.preview-heart{text-align:right;color:var(--rose);font-size:24px;line-height:1}
+#preview-name{font-family:"Songti SC","SimSun",serif;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preview-lines{height:48px;background:repeating-linear-gradient(to bottom,transparent 0 14px,#d9c5b766 14px 15px);margin-right:15%}
+.envelope-front{background:linear-gradient(32deg,transparent 49.7%,#d2ac9c66 49.9%,transparent 50.3%),linear-gradient(-32deg,transparent 49.7%,#d2ac9c66 49.9%,transparent 50.3%),linear-gradient(150deg,#ecd3c5,#e3bdad)}
+.envelope-flap{height:57%;clip-path:polygon(0 0,100% 0,50% 100%);transition:none;backface-visibility:visible;background:linear-gradient(to bottom,#f4e0d5,#edd0c1);filter:drop-shadow(0 2px 2px #71493620)}
+.envelope:not(.opening):hover .seal{transform:scale(1.06)}
+.seal{transition:transform .2s,opacity .2s}
 .envelope.opening{translate:0 0;cursor:default}
-.opening .seal{opacity:0;transform:scale(.8);transition:opacity .18s,transform .18s}
-.opening .envelope-flap{animation:flap-open .55s .15s ease-in-out both;transform:none;z-index:3}
-.opening .envelope-letter{animation:letter-rise .65s .65s cubic-bezier(.22,.61,.36,1) both;transform:none}
-.opening .recipient{opacity:0;transition:opacity .3s .65s}
-.envelope-stage:has(.opening)>h1{opacity:0;transition:opacity .25s .65s}
+.opening .seal{opacity:0;transform:scale(.75);transition:opacity .2s,transform .2s}
+.opening .envelope-flap{animation:flap-open .6s .18s ease-in-out both;transform:none;z-index:3}
+.opening .envelope-letter{animation:letter-rise .9s .8s cubic-bezier(.22,.61,.36,1) both;transform:none}
+.is-opening>h1{opacity:0;transform:translateY(-8px);transition:opacity .25s,transform .25s}
+.is-opening>.primary{opacity:0;transition:opacity .25s;pointer-events:none}
 .envelope-stage>.primary:disabled{cursor:wait;background:#b67a87;border-color:#b67a87}
-.letter-stage:not([hidden]){animation:letter-arrive .45s ease-out both}
+.letter-stage:not([hidden]){animation:letter-arrive .6s cubic-bezier(.22,.61,.36,1) both}
 @keyframes flap-open{0%{transform:rotateX(0);z-index:3}49%{z-index:3}50%,100%{z-index:0}100%{transform:rotateX(180deg)}}
-@keyframes letter-rise{0%{transform:translateY(0);opacity:1}75%{opacity:1}100%{transform:translateY(-85%);opacity:0}}
-@keyframes letter-arrive{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:420px){.envelope{margin-top:95px}}
+@keyframes letter-rise{0%{transform:translateY(0)}78%,100%{transform:translateY(-100%)}}
+@keyframes letter-arrive{from{opacity:0;transform:translateY(24px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:420px){.envelope{margin-top:140px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
