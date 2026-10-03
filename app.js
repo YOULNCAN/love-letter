@@ -85,3 +85,85 @@ function respond(choice) {
 }
 $('accept').addEventListener('click', () => respond('accept'));
 $('consider').addEventListener('click', () => respond('consider'));
+
+// Original gentle arpeggio, synthesized locally without downloads or tracking.
+let audioContext;
+let musicTimer;
+let musicPlaying = false;
+let musicBusy = false;
+let autoMusicAttempted = false;
+let noteIndex = 0;
+let nextNoteTime = 0;
+const musicNotes = [60,64,67,72,71,67,64,67,57,60,64,69,67,64,60,64,53,57,60,65,64,60,57,60,55,59,62,67,69,67,62,59];
+
+function scheduleMusic() {
+  while (nextNoteTime < audioContext.currentTime + 0.2) {
+    const frequency = 440 * 2 ** ((musicNotes[noteIndex % musicNotes.length] - 69) / 12);
+    const voice = audioContext.createGain();
+    voice.gain.setValueAtTime(0, nextNoteTime);
+    voice.gain.linearRampToValueAtTime(0.045, nextNoteTime + 0.015);
+    voice.gain.exponentialRampToValueAtTime(0.0001, nextNoteTime + 2.4);
+    voice.connect(audioContext.destination);
+    [1, 2, 3].forEach((harmonic, index) => {
+      const oscillator = audioContext.createOscillator();
+      const tone = audioContext.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency * harmonic;
+      tone.gain.value = [1, 0.22, 0.07][index];
+      oscillator.connect(tone);
+      tone.connect(voice);
+      oscillator.start(nextNoteTime);
+      oscillator.stop(nextNoteTime + 2.5);
+      oscillator.onended = () => { oscillator.disconnect(); tone.disconnect(); if (index === 2) voice.disconnect(); };
+    });
+    noteIndex += 1;
+    nextNoteTime += 0.55;
+  }
+}
+
+function updateMusicButton() {
+  $('music-toggle').setAttribute('aria-pressed', String(musicPlaying));
+  $('music-toggle').setAttribute('aria-label', musicPlaying ? '暂停背景音乐' : '播放背景音乐');
+  $('music-label').textContent = musicPlaying ? '暂停音乐' : '播放音乐';
+}
+
+async function setMusic(playing) {
+  if (musicBusy) return;
+  musicBusy = true;
+  try {
+    if (playing) {
+      const AudioEngine = window.AudioContext || window.webkitAudioContext;
+      if (!AudioEngine) throw new Error('Audio unsupported');
+      audioContext ||= new AudioEngine();
+      await audioContext.resume();
+      if (audioContext.state !== 'running') throw new Error('Audio blocked');
+      musicPlaying = true;
+      nextNoteTime = audioContext.currentTime + 0.05;
+      scheduleMusic();
+      musicTimer = window.setInterval(scheduleMusic, 100);
+    } else {
+      window.clearInterval(musicTimer);
+      await audioContext.suspend();
+      musicPlaying = false;
+    }
+    updateMusicButton();
+  } catch {
+    musicPlaying = false;
+    updateMusicButton();
+    $('music-label').textContent = '点击重试';
+  } finally {
+    musicBusy = false;
+  }
+}
+
+$('music-toggle').addEventListener('click', () => {
+  autoMusicAttempted = true;
+  setMusic(!musicPlaying);
+});
+function startMusicOnInteraction(event) {
+  if (autoMusicAttempted || event.target.closest('#music-toggle')) return;
+  autoMusicAttempted = true;
+  setMusic(true);
+}
+document.addEventListener('click', startMusicOnInteraction);
+document.addEventListener('keydown', startMusicOnInteraction);
