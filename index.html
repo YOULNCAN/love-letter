@@ -15,19 +15,15 @@
   <main>
     <section id="entry" class="stage entry" aria-labelledby="entry-title">
       <div class="small-envelope" aria-hidden="true"><span>♥</span></div>
-      <p class="eyebrow">藏在心里的话 · 今天交给你</p>
       <h1 id="entry-title">有一封信，<br>想交给<span class="accent">你。</span></h1>
-      <p class="intro">有些心意，想认真说给你听。</p>
       <form id="name-form" novalidate autocomplete="off">
         <label for="name">该怎么称呼你？</label>
         <input id="name" name="name" placeholder="写下你的名字或昵称" aria-describedby="name-error" required>
         <p id="name-error" class="error" role="alert"></p>
         <button class="primary" type="submit">收下这封信 <span aria-hidden="true">→</span></button>
       </form>
-      <p class="footnote">这一刻，只想把心意交给你。</p>
     </section>
     <section id="envelope-stage" class="stage envelope-stage" hidden aria-labelledby="envelope-title">
-      <p class="eyebrow">有些话，终于鼓起勇气</p>
       <h1 id="envelope-title" tabindex="-1">这封信，<br>是写给你的。</h1>
       <button id="envelope" class="envelope" type="button" aria-label="轻轻打开信封">
         <span class="envelope-letter" aria-hidden="true">有些话，想告诉你。</span>
@@ -37,10 +33,8 @@
         <span class="seal" aria-hidden="true">♥</span>
       </button>
       <button id="open-letter" class="primary" type="button">轻轻打开 <span aria-hidden="true">♡</span></button>
-      <p class="footnote">不用着急，让心意慢慢展开。</p>
     </section>
     <section id="letter-stage" class="stage letter-stage" hidden aria-labelledby="letter-title">
-      <p class="eyebrow">一封信 · 一份认真的心意</p>
       <article class="paper">
         <div class="paper-heading"><span>FOR YOU</span><span aria-hidden="true">♡</span></div>
         <h1 id="letter-title" tabindex="-1"><span id="letter-name"></span>：</h1>
@@ -52,11 +46,9 @@
         <button id="consider" class="secondary" type="button">我想再想想</button>
       </div>
       <div id="response" class="response" role="status" aria-live="polite" aria-atomic="true" hidden></div>
-      <p class="footnote">你的每一种答案，都值得被认真对待。</p>
     </section>
     <noscript><p class="noscript">请开启浏览器的 JavaScript，让这封信为你展开。</p></noscript>
   </main>
-  <footer>把喜欢，写成一封信 <span aria-hidden="true">♡</span></footer>
   <div id="celebration" aria-hidden="true"></div>
 </body>
 </html>
